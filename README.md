@@ -99,6 +99,50 @@ Inspector ใช้ที่ `http://127.0.0.1:4789` บนเครื่อง
 
 [GitHub Hands-on Guide](https://github.com/drsanti/github-hands-on)
 
+## ภาพรวมสถาปัตยกรรมที่หลักสูตรสอน
+
+ND03 เน้นการออกแบบระบบแบบ **Distributed Middleware** โดยแยก Sensor, Machine, AI, Digital Twin, Recorder และ Inspector เป็น **Nodes** ที่เชื่อมต่อกันผ่าน Graph และส่งข้อมูลโดยใช้ Topic, Service และ Action ตามลักษณะของงาน
+
+### แผนภาพสถาปัตยกรรม
+
+```mermaid
+flowchart TB
+    B["ESP32-S3 Board / Sensors"] -->|"USB / BLE / Wi-Fi"| BR["Host Bridge"]
+    BR --> S["Sensor Node"]
+    S -->|"Publish state"| T["Topic: /machine/01/state"]
+    M["Machine Node"] -->|"Publish state"| T
+    T -->|"Subscribe"| D["Digital Twin Node"]
+    T -->|"Subscribe"| R["Recorder (.rbag)"]
+    T -->|"Subscribe"| I["Inspector / Dashboard"]
+    D -->|"Service or Action command path"| M
+```
+
+ภาพนี้สรุปแนวคิดของหลักสูตร ไม่ใช่แผนผังระบบที่ทดลองเชื่อมต่อจริงครบทุกส่วนแล้ว โดย **robotos runtime** จัดการ Graph, Topics, Services, Actions, Parameters และ Presence ส่วน **Zenoh** เป็น Transport ตามค่าเริ่มต้น
+
+### รูปแบบการสื่อสาร
+
+| รูปแบบ | หลักการ | ตัวอย่างในโรงงาน |
+|---|---|---|
+| **Topic** | Publish/Subscribe ข้อมูลต่อเนื่อง | Sensor, Machine State, Telemetry |
+| **Service** | Request/Response สำหรับงานสั้น | อ่านสถานะ, Reset Counter |
+| **Action** | Goal/Feedback/Result/Cancel สำหรับงานยาว | Homing, Machine Cycle |
+| **Parameter** | ตั้งค่าที่มีเจ้าของเป็น Node | Threshold, Setpoint, Sampling Rate |
+| **Presence** | ตรวจสอบ Node ที่อยู่ใน Graph | Station Alive / Watchdog |
+| **Recorder/Replay** | บันทึกและเล่น Topic Stream ซ้ำ | Historian, Debug, Regression Test |
+| **Digital Twin** | Node ที่สะท้อนข้อมูลจากเครื่องจริง | Shadow Monitoring, Virtual Commissioning |
+
+### แนวคิดสำคัญ
+
+- **Node** ทำหน้าที่เฉพาะและไม่จำเป็นต้องเรียกโปรแกรมอื่นโดยตรง
+- **Topic** กระจายข้อมูลชุดเดียวไปยังผู้รับหลายรายได้
+- **Service** เหมาะกับคำสั่งที่เสร็จและตอบกลับเร็ว ส่วน **Action** เหมาะกับงานที่ต้องติดตามความคืบหน้าและยกเลิกได้
+- **Digital Twin** รับข้อมูลจริงเพื่อติดตามและจำลองการทำงาน แต่ไม่ใช่ตัวแทนระบบ Safety
+- วงจร **Hard Real-time**, PID, E-stop และ Safety Interlock ควรอยู่ใน Controller/ระบบความปลอดภัยที่เหมาะสม ไม่พึ่ง Network Pub/Sub เป็นวงจรควบคุมหลัก
+
+**อ้างอิง:** [Week 02 — บทเรียน](https://github.com/drsanti/kmutt-nd69/tree/main/nd3/docs/week02/lessons) · [Week 03 — System Overview](https://github.com/drsanti/kmutt-nd69/blob/main/nd3/docs/week03/SYSTEM-OVERVIEW.md)
+
+---
+
 ## ความเชื่อมโยงกับงานอุตสาหกรรม
 
 | แนวคิด ND03 | การประยุกต์ |
